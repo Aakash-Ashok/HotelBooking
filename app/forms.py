@@ -1,7 +1,7 @@
 # forms.py
 
 from django import forms
-from .models import User
+from .models import *
 
 class CustomerRegistrationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -9,7 +9,7 @@ class CustomerRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password']
+        fields = ['username', 'email', 'password']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -19,3 +19,36 @@ class CustomerRegistrationForm(forms.ModelForm):
         if password != confirm_password:
             raise forms.ValidationError("Passwords do not match")
         return cleaned_data
+
+
+class CategoryForm(forms.ModelForm):
+    IS_AVAILABLE_CHOICES = [
+        (True, 'Yes'),
+        (False, 'No'),
+    ]
+
+    # Use BooleanField for is_available with RadioSelect widget for Yes/No options
+    is_available = forms.ChoiceField(
+        choices=IS_AVAILABLE_CHOICES,
+        widget=forms.RadioSelect,
+        label="Is the Category Available?"
+    )
+    
+    class Meta:
+        model = Category
+        fields = ['name', 'description', 'price_per_night', 'number_of_rooms', 'is_available']
+        
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4, 'cols': 40}),
+        }
+
+
+class SeasonalPricingForm(forms.ModelForm):
+    class Meta:
+        model = SeasonalPricing
+        fields = ['category', 'start_date', 'end_date', 'price_per_night']
+
+class TouristLocationForm(forms.ModelForm):
+    class Meta:
+        model = TouristLocation
+        fields = ['name', 'description', 'distance_from_home_stay', 'image']

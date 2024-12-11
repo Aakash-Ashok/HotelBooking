@@ -1,0 +1,26 @@
+{% extends 'admin/base_generic.html' %}
+
+{% block content %}
+<h1>Category List</h1>
+
+<ul>
+    {% for category in categories %}
+    <li>
+        <strong>Category Name:</strong> {{ category.name }} <br>
+        <strong>Description:</strong> {{ category.description }} <br>
+        <strong>Price Per Night:</strong> {{ category.price_per_night }} <br>
+        <strong>Number of Rooms:</strong> {{ category.number_of_rooms }} <br>
+        <strong>Availability:</strong> {% if category.is_available %} Yes {% else %} No {% endif %} <br>
+
+        <!-- Link to Add Seasonal Pricing for this Category -->
+        <a href="{% url 'seasonalpricing_add' category.pk %}">Add Seasonal Pricing</a> |
+        <a href="{% url 'category_edit' category.pk %}">Edit</a> |
+        <a href="{% url 'category_delete' category.pk %}">Delete</a>
+
+        <hr>
+    </li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'category_add' %}">Add New Category</a>
+{% endblock %}

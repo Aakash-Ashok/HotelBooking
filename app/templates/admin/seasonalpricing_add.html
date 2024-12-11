@@ -1,0 +1,11 @@
+{% extends 'admin/base_generic.html' %}
+
+{% block content %}
+<h1>Add Seasonal Pricing for {{ form.category.value }}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Seasonal Pricing</button>
+</form>
+<a href="{% url 'seasonalpricing_list' %}">Back to Seasonal Pricing List</a>
+{% endblock %}

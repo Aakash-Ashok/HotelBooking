@@ -1,7 +1,27 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser , BaseUserManager
 
-# Custom User Model
+class CustomUserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        """
+        Create and return a superuser with an email and password.
+        """
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'admin')
+
+        return self.create_user(username, email, password, **extra_fields)
+
+
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -9,38 +29,32 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
 
+    objects = CustomUserManager()  # Use the custom manager for user creation
+
 # Category Model
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
+    price_per_night = models.DecimalField(max_digits=8, decimal_places=2)  # Price for the category
+    number_of_rooms = models.PositiveIntegerField(default=0)  # Number of rooms in this category
+    is_available = models.BooleanField(default=True)  # Availability of the category
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
-# Room Model
-class Room(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    price_per_night = models.DecimalField(max_digits=8, decimal_places=2)
-    is_available = models.BooleanField(default=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="rooms")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
-
-# Seasonal Pricing Model
+# Seasonal Pricing Model (applied per Category)
 class SeasonalPricing(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='seasonal_prices')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='seasonal_prices')
     start_date = models.DateField()
     end_date = models.DateField()
-    price_per_night = models.DecimalField(max_digits=8, decimal_places=2)
+    price_per_night = models.DecimalField(max_digits=8, decimal_places=2)  # Override price for the category during this season
 
     def __str__(self):
-        return f"{self.room.name} - {self.price_per_night} (from {self.start_date} to {self.end_date})"
+        return f"{self.category.name} - {self.price_per_night} (from {self.start_date} to {self.end_date})"
+
 
 # Tourist Location Model
 class TouristLocation(models.Model):
@@ -62,7 +76,7 @@ class Booking(models.Model):
         ('cancelled', 'Cancelled'),
     )
     customer = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'customer'})
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    Category = models.ForeignKey(Category, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')

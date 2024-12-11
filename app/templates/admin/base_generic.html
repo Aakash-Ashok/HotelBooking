@@ -1,0 +1,25 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Home Stay Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/adminstyles.css' %}">
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'category_list' %}">Categories</a></li>
+            <li><a href="{% url 'touristlocation_add' %}">Add Tourist Location</a></li>
+            <li><a href="{% url 'seasonalpricing_list' %}">Seasonal Pricing</a></li>
+        </ul>
+    </nav>
+
+    {% block content %}
+    {% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,15 @@
+{% extends 'admin/base_generic.html' %}
+
+{% block content %}
+<h1>Tourist Locations</h1>
+<a href="{% url 'touristlocation_add' %}">Add New Tourist Location</a>
+<ul>
+    {% for location in tourist_locations %}
+    <li>
+        {{ location.name }} - Distance: {{ location.distance_from_home_stay }} km
+        <a href="{% url 'touristlocation_edit' location.pk %}">Edit</a> |
+        <a href="{% url 'touristlocation_delete' location.pk %}">Delete</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

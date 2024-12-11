@@ -1,0 +1,26 @@
+{% extends 'admin/base_generic.html' %}
+
+{% block content %}
+<h1>Seasonal Pricing List</h1>
+<ul>
+    {% for seasonal_price in seasonal_prices %}
+    <li>
+        <strong>Category:</strong> {{ seasonal_price.category.name }} <br>
+        <strong>Actual Price:</strong> {{ seasonal_price.category.price_per_night }} <br>
+        <strong>Seasonal Price:</strong>
+        {% if seasonal_price.price_per_night %}
+        {{ seasonal_price.price_per_night }} <br>
+        <strong>From:</strong> {{ seasonal_price.start_date }} <br>
+        <strong>To:</strong> {{ seasonal_price.end_date }}
+        {% else %}
+        No seasonal price set.
+        {% endif %}
+        <br>
+        <!-- Edit and Delete Links -->
+        <a href="{% url 'seasonalpricing_edit' seasonal_price.pk %}">Edit</a> |
+        <a href="{% url 'seasonalpricing_delete' seasonal_price.pk %}">Delete</a>
+        <hr>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
