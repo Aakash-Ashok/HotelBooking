@@ -38,6 +38,7 @@ class Category(models.Model):
     price_per_night = models.DecimalField(max_digits=8, decimal_places=2)  # Price for the category
     number_of_rooms = models.PositiveIntegerField(default=0)  # Number of rooms in this category
     is_available = models.BooleanField(default=True)  # Availability of the category
+    image = models.ImageField(upload_to='category/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -52,6 +53,9 @@ class SeasonalPricing(models.Model):
     end_date = models.DateField()
     price_per_night = models.DecimalField(max_digits=8, decimal_places=2)  # Override price for the category during this season
 
+    class Meta:
+        unique_together = ('category', 'start_date', 'end_date')
+        
     def __str__(self):
         return f"{self.category.name} - {self.price_per_night} (from {self.start_date} to {self.end_date})"
 
@@ -64,37 +68,51 @@ class TouristLocation(models.Model):
     image = models.ImageField(upload_to='tourist_locations/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    link=models.CharField(null=True,max_length=100)
 
     def __str__(self):
         return self.name
 
 # Booking Model
 class Booking(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('cancelled', 'Cancelled'),
-    )
     customer = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'customer'})
     Category = models.ForeignKey(Category, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    _total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Backing field
+
     def __str__(self):
-        return f"{self.customer.username} - {self.room.name} ({self.start_date} to {self.end_date})"
+        return f"{self.customer.username} - {self.Category.name} ({self.start_date} to {self.end_date})"
 
     @property
     def total_price(self):
+        if self._total_price is not None:
+            return self._total_price
+
+        # Check for seasonal pricing
         seasonal_pricing = SeasonalPricing.objects.filter(
-            room=self.room,
+            category=self.Category,
             start_date__lte=self.start_date,
             end_date__gte=self.end_date
         ).first()
-        price = seasonal_pricing.price_per_night if seasonal_pricing else self.room.price_per_night
-        delta = (self.end_date - self.start_date).days
-        return delta * price
+
+        price_per_night = seasonal_pricing.price_per_night if seasonal_pricing else self.Category.price_per_night
+        total_days = (self.end_date - self.start_date).days
+
+        return total_days * price_per_night
+
+    @total_price.setter
+    def total_price(self, value):
+        self._total_price = value
+
+    
+    def delete(self, *args, **kwargs):
+        # Restore room availability when booking is deleted
+        self.Category.number_of_rooms += 1
+        self.Category.save()
+        super().delete(*args, **kwargs)
 
 # Payment Model
 class Payment(models.Model):
@@ -106,3 +124,12 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.booking} - {self.amount} ({self.status})"
+
+
+class Photo(models.Model):
+    image = models.ImageField(upload_to='photos/')  # Store images in the 'media/photos/' directory
+    caption = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.caption if self.caption else f"Photo {self.id}"
+    
